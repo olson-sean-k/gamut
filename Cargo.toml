@@ -1,0 +1,8 @@
+[package]
+name = "gamut"
+version = "0.1.0"
+authors = ["Sean Olson <olson.sean.k@gmail.com>"]
+
+[dependencies]
+num = "0.1.*"
+static_assertions = "0.2.*"
