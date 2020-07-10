@@ -1,13 +1,7 @@
-extern crate num;
-#[allow(unused_imports)]
-#[macro_use]
-extern crate static_assertions;
+pub mod clamped;
+mod proxy;
 
-mod clamp;
-
-pub use clamp::{clamp, Bounds, Clamped};
-
-use num::Num;
+pub use crate::proxy::Proxy;
 
 pub trait Primitive {}
 
@@ -21,13 +15,3 @@ impl Primitive for u32 {}
 impl Primitive for u64 {}
 impl Primitive for f32 {}
 impl Primitive for f64 {}
-
-// `Proxy` types should NOT implement `Deref`. This is tempting, but it
-// provides access to methods that betray the proxy (like `max_value`).
-pub trait Proxy<T>: Sized
-where
-    T: Num,
-{
-    fn from_inner(value: T) -> Self;
-    fn into_inner(self) -> T;
-}
