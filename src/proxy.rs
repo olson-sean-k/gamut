@@ -4,7 +4,14 @@ use std::ops::{
 };
 
 pub trait Constraint<K, T> {
-    fn map(inner: T) -> Option<T>;
+    fn map(inner: T) -> Option<T> {
+        // It is not possible to implement an identity constraint for any kind
+        // `K`, because it would conflict with more specific `Constraint`
+        // implementations. Each proxy kind that does not constrain its inner
+        // type must provide its own identity constraint (and can use this
+        // default implementation).
+        Some(inner)
+    }
 }
 
 #[repr(transparent)]
