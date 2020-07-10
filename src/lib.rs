@@ -1,6 +1,7 @@
-pub mod clamped;
+mod bounded;
 mod proxy;
 
+pub use crate::bounded::{clamped, wrapped, Bounds};
 pub use crate::proxy::Proxy;
 
 pub trait Primitive {}

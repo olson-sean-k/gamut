@@ -1,45 +1,16 @@
-use num_traits::{Bounded, Zero};
 use std::cmp;
 use std::fmt::{self, Debug, Formatter};
-use std::marker::PhantomData;
 
+use crate::bounded::{Bounds, ZeroMax};
 use crate::proxy::{Constraint, Proxy};
 
 mod inner {
-    use super::*;
-
     pub enum ClampedKind {}
-
-    pub struct ZeroMax<T>(PhantomData<T>);
-
-    impl<T> Bounds<T> for ZeroMax<T>
-    where
-        T: Bounded + Ord + Zero,
-    {
-        fn min_value() -> T {
-            T::zero()
-        }
-
-        fn max_value() -> T {
-            T::max_value()
-        }
-    }
 }
 use self::inner::*;
 
 pub type Clamped<T, B> = Proxy<ClampedKind, T, B>;
 pub type Positive<T> = Clamped<T, ZeroMax<T>>;
-
-pub trait Bounds<T>
-where
-    T: Ord,
-{
-    //const MIN_VALUE: T;
-    //const MAX_VALUE: T;
-
-    fn min_value() -> T;
-    fn max_value() -> T;
-}
 
 impl<T, B> Constraint<ClampedKind, T> for B
 where
@@ -47,7 +18,6 @@ where
     B: Bounds<T>,
 {
     fn map(inner: T) -> Option<T> {
-        //Some(clamp(inner, B::MIN_VALUE, B::MAX_VALUE))
         Some(clamp(inner, B::min_value(), B::max_value()))
     }
 }
@@ -69,10 +39,7 @@ macro_rules! clamped {
 
         const_assert!($min <= $max);
         struct B;
-        impl $crate::clamped::Bounds<$t> for B {
-            //const MIN_VALUE: $t = $min;
-            //const MAX_VALUE: $t = $max;
-
+        impl $crate::Bounds<$t> for B {
             fn min_value() -> $t {
                 $min
             }
@@ -95,7 +62,7 @@ where
 #[cfg(test)]
 mod tests {
     #[test]
-    fn foo() {
+    fn clamped_macro_types() {
         let _ = clamped!(u8 => 0, [0, 16]);
         let _ = clamped!(u8 => 0, [0, 32]);
     }
