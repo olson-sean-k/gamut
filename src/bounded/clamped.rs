@@ -10,9 +10,9 @@ mod inner {
 use self::inner::*;
 
 pub type Clamped<T, B> = Proxy<ClampedKind, T, B>;
-pub type Positive<T> = Clamped<T, ZeroMax<T>>;
-pub type Unit<T> = Clamped<T, ZeroOne<T>>;
-pub type SignedUnit<T> = Clamped<T, NOneOne<T>>;
+pub type ClampedPositive<T> = Clamped<T, ZeroMax<T>>;
+pub type ClampedUnit<T> = Clamped<T, ZeroOne<T>>;
+pub type ClampedSignedUnit<T> = Clamped<T, NOneOne<T>>;
 
 impl<T, B> Constraint<ClampedKind, T> for B
 where
