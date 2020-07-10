@@ -3,7 +3,9 @@ mod proxy;
 
 use crate::proxy::Constraint;
 
-pub use crate::bounded::{clamped, wrapped, Bounds};
+pub use crate::bounded::clamped::*;
+pub use crate::bounded::wrapped::*;
+pub use crate::bounded::Bounds;
 pub use crate::proxy::Proxy;
 
 pub trait Primitive {}
