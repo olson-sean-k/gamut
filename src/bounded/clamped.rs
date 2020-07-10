@@ -1,7 +1,7 @@
 use std::cmp;
 use std::fmt::{self, Debug, Formatter};
 
-use crate::bounded::{Bounds, ZeroMax};
+use crate::bounded::{Bounds, NOneOne, ZeroMax, ZeroOne};
 use crate::proxy::{Constraint, Proxy};
 
 mod inner {
@@ -11,6 +11,8 @@ use self::inner::*;
 
 pub type Clamped<T, B> = Proxy<ClampedKind, T, B>;
 pub type Positive<T> = Clamped<T, ZeroMax<T>>;
+pub type Unit<T> = Clamped<T, ZeroOne<T>>;
+pub type SignedUnit<T> = Clamped<T, NOneOne<T>>;
 
 impl<T, B> Constraint<ClampedKind, T> for B
 where
