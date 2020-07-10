@@ -4,6 +4,8 @@ pub mod wrapped;
 use num_traits::{Bounded, One, Signed, Zero};
 use std::marker::PhantomData;
 
+use crate::proxy::{Member, NegativeElement};
+
 pub trait Bounds<T>
 where
     T: Ord,
@@ -29,6 +31,8 @@ where
         T::one()
     }
 }
+
+impl<T> Member<NegativeElement> for NOneOne<T> {}
 
 pub struct ZeroMax<T>(PhantomData<T>);
 

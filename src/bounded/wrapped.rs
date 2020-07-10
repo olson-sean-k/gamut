@@ -1,4 +1,4 @@
-use std::cmp;
+use std::cmp::{self, Ordering};
 use std::fmt::{self, Debug, Formatter};
 
 use crate::bounded::{Bounds, NOneOne, ZeroMax, ZeroOne};
@@ -34,6 +34,43 @@ where
     }
 }
 
+impl<T, B> Eq for Wrapped<T, B>
+where
+    T: Ord + Eq,
+    B: Bounds<T>,
+{
+}
+
+impl<T, B> Ord for Wrapped<T, B>
+where
+    T: Ord,
+    B: Bounds<T>,
+{
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.partial_cmp(other).unwrap()
+    }
+}
+
+impl<T, B> PartialEq for Wrapped<T, B>
+where
+    T: Ord + PartialEq,
+    B: Bounds<T>,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.as_ref().eq(other.as_ref())
+    }
+}
+
+impl<T, B> PartialOrd for Wrapped<T, B>
+where
+    T: Ord,
+    B: Bounds<T>,
+{
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.as_ref().partial_cmp(other.as_ref())
+    }
+}
+
 #[macro_export]
 macro_rules! wrapped {
     ($t:ty => $n:expr, [ $min:expr, $max:expr ]) => {{
@@ -50,7 +87,7 @@ macro_rules! wrapped {
                 $max
             }
         }
-        $crate::wrapped::Wrapped::<$t, B>::from($n)
+        $crate::Wrapped::<$t, B>::from($n)
     }};
 }
 

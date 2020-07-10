@@ -3,6 +3,8 @@ use std::ops::{
     Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign,
 };
 
+use crate::IntoPrimitive;
+
 pub trait Constraint<K, T> {
     fn map(inner: T) -> Option<T> {
         // It is not possible to implement an identity constraint for any kind
@@ -13,6 +15,10 @@ pub trait Constraint<K, T> {
         Some(inner)
     }
 }
+
+pub trait Member<E> {}
+
+pub enum NegativeElement {}
 
 #[repr(transparent)]
 pub struct Proxy<K, T, C>
@@ -192,6 +198,18 @@ where
     }
 }
 
+impl<K, T, C> IntoPrimitive for Proxy<K, T, C>
+where
+    T: IntoPrimitive,
+    C: Constraint<K, T>,
+{
+    type Primitive = T::Primitive;
+
+    fn into_primitive(self) -> Self::Primitive {
+        self.into_inner().into_primitive()
+    }
+}
+
 impl<K, T, C> Mul for Proxy<K, T, C>
 where
     T: Mul<Output = T>,
@@ -241,7 +259,7 @@ where
 impl<K, T, C> Neg for Proxy<K, T, C>
 where
     T: Neg<Output = T>,
-    C: Constraint<K, T>,
+    C: Constraint<K, T> + Member<NegativeElement>,
 {
     type Output = Self;
 
