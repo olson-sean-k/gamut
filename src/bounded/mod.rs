@@ -4,7 +4,7 @@ pub mod wrapped;
 use num_traits::{Bounded, One, Signed, Zero};
 use std::marker::PhantomData;
 
-use crate::proxy::{Member, NegativeSet};
+use crate::proxy::{Member, NegativeSet, OneSet, ZeroSet};
 
 pub trait Bounds<T>
 where
@@ -33,6 +33,8 @@ where
 }
 
 impl<T> Member<NegativeSet> for NOneOne<T> {}
+impl<T> Member<OneSet> for NOneOne<T> {}
+impl<T> Member<ZeroSet> for NOneOne<T> {}
 
 pub struct ZeroMax<T>(PhantomData<T>);
 
@@ -63,3 +65,6 @@ where
         T::one()
     }
 }
+
+impl<T> Member<OneSet> for ZeroOne<T> {}
+impl<T> Member<ZeroSet> for ZeroOne<T> {}

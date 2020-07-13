@@ -1,3 +1,4 @@
+use num_traits::{FromPrimitive, Num, NumCast, One, Signed, ToPrimitive, Unsigned, Zero};
 use std::marker::PhantomData;
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign,
@@ -20,6 +21,12 @@ pub trait Member<E> {}
 
 #[derive(Debug)]
 pub enum NegativeSet {}
+
+#[derive(Debug)]
+pub enum OneSet {}
+
+#[derive(Debug)]
+pub enum ZeroSet {}
 
 #[repr(transparent)]
 pub struct Proxy<K, T, C>
@@ -199,6 +206,20 @@ where
     }
 }
 
+impl<K, T, C> FromPrimitive for Proxy<K, T, C>
+where
+    C: Constraint<K, T>,
+    T: FromPrimitive,
+{
+    fn from_i64(inner: i64) -> Option<Self> {
+        T::from_i64(inner).map(|inner| Self::from(inner))
+    }
+
+    fn from_u64(inner: u64) -> Option<Self> {
+        T::from_u64(inner).map(|inner| Self::from(inner))
+    }
+}
+
 impl<K, T, C> IntoPrimitive for Proxy<K, T, C>
 where
     T: IntoPrimitive,
@@ -269,6 +290,42 @@ where
     }
 }
 
+impl<K, T, C> Num for Proxy<K, T, C>
+where
+    Self: PartialEq,
+    T: Num,
+    C: Constraint<K, T> + Member<OneSet> + Member<ZeroSet>,
+{
+    type FromStrRadixErr = T::FromStrRadixErr;
+
+    fn from_str_radix(source: &str, radix: u32) -> Result<Self, Self::FromStrRadixErr> {
+        T::from_str_radix(source, radix).map(|inner| Self::from(inner))
+    }
+}
+
+impl<K, T, C> NumCast for Proxy<K, T, C>
+where
+    C: Constraint<K, T>,
+    T: NumCast,
+{
+    fn from<U>(value: U) -> Option<Self>
+    where
+        U: ToPrimitive,
+    {
+        T::from(value).map(|inner| From::from(inner))
+    }
+}
+
+impl<K, T, C> One for Proxy<K, T, C>
+where
+    T: One,
+    C: Constraint<K, T> + Member<OneSet>,
+{
+    fn one() -> Self {
+        Self::from_inner_unchecked(T::one())
+    }
+}
+
 impl<K, T, C> Rem for Proxy<K, T, C>
 where
     T: Rem<Output = T>,
@@ -315,6 +372,35 @@ where
     }
 }
 
+// TODO: This requires `Copy`, because of the use of `map` and `zip_map`.
+//       Consider a reference variant of these functions.
+impl<K, T, C> Signed for Proxy<K, T, C>
+where
+    Self: Copy + PartialEq,
+    T: Num + Signed,
+    C: Constraint<K, T> + Member<NegativeSet> + Member<OneSet> + Member<ZeroSet>,
+{
+    fn abs(&self) -> Self {
+        self.map(|inner| inner.abs())
+    }
+
+    fn abs_sub(&self, other: &Self) -> Self {
+        self.zip_map(*other, |x, y| x.abs_sub(&y))
+    }
+
+    fn signum(&self) -> Self {
+        self.map(|inner| inner.signum())
+    }
+
+    fn is_positive(&self) -> bool {
+        self.inner.is_positive()
+    }
+
+    fn is_negative(&self) -> bool {
+        self.inner.is_negative()
+    }
+}
+
 impl<K, T, C> Sub for Proxy<K, T, C>
 where
     T: Sub<Output = T>,
@@ -358,5 +444,41 @@ where
 {
     fn sub_assign(&mut self, y: T) {
         *self = self.clone() - y;
+    }
+}
+
+impl<K, T, C> ToPrimitive for Proxy<K, T, C>
+where
+    C: Constraint<K, T>,
+    T: ToPrimitive,
+{
+    fn to_i64(&self) -> Option<i64> {
+        self.inner.to_i64()
+    }
+
+    fn to_u64(&self) -> Option<u64> {
+        self.inner.to_u64()
+    }
+}
+
+impl<K, T, C> Unsigned for Proxy<K, T, C>
+where
+    Self: PartialEq,
+    T: Unsigned,
+    C: Constraint<K, T> + Member<OneSet> + Member<ZeroSet>,
+{
+}
+
+impl<K, T, C> Zero for Proxy<K, T, C>
+where
+    T: Zero,
+    C: Constraint<K, T> + Member<ZeroSet>,
+{
+    fn zero() -> Self {
+        Self::from_inner_unchecked(T::zero())
+    }
+
+    fn is_zero(&self) -> bool {
+        self.inner.is_zero()
     }
 }

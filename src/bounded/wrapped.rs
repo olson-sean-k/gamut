@@ -1,3 +1,4 @@
+use num_traits::Bounded;
 use std::cmp::{self, Ordering};
 use std::fmt::{self, Debug, Formatter};
 
@@ -21,6 +22,20 @@ where
 {
     fn map(inner: T) -> Option<T> {
         Some(wrap(inner, B::min_value(), B::max_value()))
+    }
+}
+
+impl<T, B> Bounded for Wrapped<T, B>
+where
+    T: Ord,
+    B: Bounds<T>,
+{
+    fn min_value() -> Self {
+        Self::from_inner_unchecked(B::min_value())
+    }
+
+    fn max_value() -> Self {
+        Self::from_inner_unchecked(B::max_value())
     }
 }
 
@@ -61,6 +76,16 @@ where
     }
 }
 
+impl<T, B> PartialEq<T> for Wrapped<T, B>
+where
+    T: Ord + PartialEq,
+    B: Bounds<T>,
+{
+    fn eq(&self, inner: &T) -> bool {
+        self.as_ref().eq(inner)
+    }
+}
+
 impl<T, B> PartialOrd for Wrapped<T, B>
 where
     T: Ord,
@@ -68,6 +93,16 @@ where
 {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.as_ref().partial_cmp(other.as_ref())
+    }
+}
+
+impl<T, B> PartialOrd<T> for Wrapped<T, B>
+where
+    T: Ord,
+    B: Bounds<T>,
+{
+    fn partial_cmp(&self, inner: &T) -> Option<Ordering> {
+        self.as_ref().partial_cmp(inner)
     }
 }
 
@@ -104,6 +139,5 @@ mod tests {
     #[test]
     fn wrapped_macro_types() {
         let _ = wrapped!(i32 => 0, [0, 16]);
-        let _ = wrapped!(i32 => 0, [0, 32]);
     }
 }
