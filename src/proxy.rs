@@ -18,7 +18,8 @@ pub trait Constraint<K, T> {
 
 pub trait Member<E> {}
 
-pub enum NegativeElement {}
+#[derive(Debug)]
+pub enum NegativeSet {}
 
 #[repr(transparent)]
 pub struct Proxy<K, T, C>
@@ -259,7 +260,7 @@ where
 impl<K, T, C> Neg for Proxy<K, T, C>
 where
     T: Neg<Output = T>,
-    C: Constraint<K, T> + Member<NegativeElement>,
+    C: Constraint<K, T> + Member<NegativeSet>,
 {
     type Output = Self;
 
