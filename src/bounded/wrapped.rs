@@ -1,7 +1,9 @@
 use num_traits::Bounded;
-use std::cmp::{self, Ordering};
+use std::cmp::Ordering;
 use std::fmt::{self, Debug, Formatter};
+use std::ops::{Add, Rem, Sub};
 
+use crate::bounded::clamped;
 use crate::bounded::{Bounds, NOneOne, ZeroMax, ZeroOne};
 use crate::proxy::{Constraint, Proxy};
 
@@ -17,7 +19,7 @@ pub type WrappedSignedUnit<T> = Wrapped<T, NOneOne<T>>;
 
 impl<T, B> Constraint<WrappedKind, T> for B
 where
-    T: Ord,
+    T: Add<Output = T> + Copy + Ord + Sub<Output = T> + Rem<Output = T>,
     B: Bounds<T>,
 {
     fn map(inner: T) -> Option<T> {
@@ -27,7 +29,7 @@ where
 
 impl<T, B> Bounded for Wrapped<T, B>
 where
-    T: Ord,
+    T: Add<Output = T> + Copy + Ord + Sub<Output = T> + Rem<Output = T>,
     B: Bounds<T>,
 {
     fn min_value() -> Self {
@@ -41,7 +43,7 @@ where
 
 impl<T, B> Debug for Wrapped<T, B>
 where
-    T: Debug + Ord,
+    T: Add<Output = T> + Copy + Debug + Ord + Sub<Output = T> + Rem<Output = T>,
     B: Bounds<T>,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -51,14 +53,14 @@ where
 
 impl<T, B> Eq for Wrapped<T, B>
 where
-    T: Ord + Eq,
+    T: Add<Output = T> + Copy + Eq + Ord + Sub<Output = T> + Rem<Output = T>,
     B: Bounds<T>,
 {
 }
 
 impl<T, B> Ord for Wrapped<T, B>
 where
-    T: Ord,
+    T: Add<Output = T> + Copy + Ord + Sub<Output = T> + Rem<Output = T>,
     B: Bounds<T>,
 {
     fn cmp(&self, other: &Self) -> Ordering {
@@ -68,7 +70,7 @@ where
 
 impl<T, B> PartialEq for Wrapped<T, B>
 where
-    T: Ord + PartialEq,
+    T: Add<Output = T> + Copy + Ord + PartialEq + Sub<Output = T> + Rem<Output = T>,
     B: Bounds<T>,
 {
     fn eq(&self, other: &Self) -> bool {
@@ -78,7 +80,7 @@ where
 
 impl<T, B> PartialEq<T> for Wrapped<T, B>
 where
-    T: Ord + PartialEq,
+    T: Add<Output = T> + Copy + Ord + PartialEq + Sub<Output = T> + Rem<Output = T>,
     B: Bounds<T>,
 {
     fn eq(&self, inner: &T) -> bool {
@@ -88,7 +90,7 @@ where
 
 impl<T, B> PartialOrd for Wrapped<T, B>
 where
-    T: Ord,
+    T: Add<Output = T> + Copy + Ord + Sub<Output = T> + Rem<Output = T>,
     B: Bounds<T>,
 {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
@@ -98,7 +100,7 @@ where
 
 impl<T, B> PartialOrd<T> for Wrapped<T, B>
 where
-    T: Ord,
+    T: Add<Output = T> + Copy + Ord + Sub<Output = T> + Rem<Output = T>,
     B: Bounds<T>,
 {
     fn partial_cmp(&self, inner: &T) -> Option<Ordering> {
@@ -111,6 +113,9 @@ macro_rules! wrapped {
     ($t:ty => $n:expr, [ $min:expr, $max:expr ]) => {{
         use static_assertions::const_assert;
 
+        // TODO: This requires a constant expression, which is difficult to
+        //       achieve with non-primitive types on stable Rust today. See
+        //       https://github.com/rust-lang/rust/issues/49146
         const_assert!($min <= $max);
         struct B;
         impl $crate::Bounds<$t> for B {
@@ -126,18 +131,33 @@ macro_rules! wrapped {
     }};
 }
 
-// TODO: Decide on type bounds and an implementation.
 pub fn wrap<T>(value: T, min: T, max: T) -> T
 where
-    T: Ord,
+    T: Add<Output = T> + Copy + Ord + Sub<Output = T> + Rem<Output = T>,
 {
-    cmp::min(cmp::max(value, min), max)
+    // Output is clamped to avoid breaching bounds due to error.
+    if value > max {
+        clamped::clamp(min + ((value - min) % (max - min)), min, max)
+    }
+    else if value < min {
+        clamped::clamp(max - ((value - max) % (max - min)), min, max)
+    }
+    else {
+        value
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    // TODO: Implement a minimal wrapper for testing against numeric types that
+    //       use a floating-point representation.
     #[test]
     fn wrapped_macro_types() {
-        let _ = wrapped!(i32 => 0, [0, 16]);
+        let x = wrapped!(i32 => 1, [1, 16]);
+        let y = x + 33;
+        let z = x - 1;
+
+        assert_eq!(y, 4);
+        assert_eq!(z, 16);
     }
 }
