@@ -5,7 +5,7 @@ use std::ops::{Add, Rem, Sub};
 
 use crate::bounded::clamped;
 use crate::bounded::{Bounds, NOneOne, ZeroMax, ZeroOne};
-use crate::proxy::{Constraint, Proxy};
+use crate::proxy::{Constraint, Proxy, ProxyExt};
 
 mod inner {
     pub enum WrappedKind {}

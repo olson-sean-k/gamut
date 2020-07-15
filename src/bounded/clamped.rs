@@ -3,7 +3,7 @@ use std::cmp::{self, Ordering};
 use std::fmt::{self, Debug, Formatter};
 
 use crate::bounded::{Bounds, NOneOne, ZeroMax, ZeroOne};
-use crate::proxy::{Constraint, Proxy};
+use crate::proxy::{Constraint, Proxy, ProxyExt};
 
 mod inner {
     pub enum ClampedKind {}

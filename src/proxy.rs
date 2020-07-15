@@ -28,6 +28,21 @@ pub enum OneSet {}
 #[derive(Debug)]
 pub enum ZeroSet {}
 
+#[doc(hidden)]
+pub trait ProxyExt<T>: Sized {
+    fn from_inner_unchecked(inner: T) -> Self;
+
+    fn try_from_inner(inner: T) -> Option<Self>;
+
+    fn map<F>(self, f: F) -> Self
+    where
+        F: FnOnce(T) -> T;
+
+    fn zip_map<F>(self, other: Self, f: F) -> Self
+    where
+        F: FnOnce(T, T) -> T;
+}
+
 #[repr(transparent)]
 pub struct Proxy<K, T, C>
 where
@@ -35,36 +50,6 @@ where
 {
     inner: T,
     phantom: PhantomData<(K, C)>,
-}
-
-impl<K, T, C> Proxy<K, T, C>
-where
-    C: Constraint<K, T>,
-{
-    pub(in crate) fn from_inner_unchecked(inner: T) -> Self {
-        Proxy {
-            inner,
-            phantom: PhantomData,
-        }
-    }
-
-    pub(in crate) fn try_from_inner(inner: T) -> Option<Self> {
-        C::map(inner).map(Self::from_inner_unchecked)
-    }
-
-    pub(in crate) fn map<F>(self, f: F) -> Self
-    where
-        F: FnOnce(T) -> T,
-    {
-        Self::from(f(self.into_inner()))
-    }
-
-    pub(in crate) fn zip_map<F>(self, other: Self, f: F) -> Self
-    where
-        F: FnOnce(T, T) -> T,
-    {
-        Self::from(f(self.into_inner(), other.into_inner()))
-    }
 }
 
 impl<K, T, C> Proxy<K, T, C>
@@ -323,6 +308,36 @@ where
 {
     fn one() -> Self {
         Self::from_inner_unchecked(T::one())
+    }
+}
+
+impl<K, T, C> ProxyExt<T> for Proxy<K, T, C>
+where
+    C: Constraint<K, T>,
+{
+    fn from_inner_unchecked(inner: T) -> Self {
+        Proxy {
+            inner,
+            phantom: PhantomData,
+        }
+    }
+
+    fn try_from_inner(inner: T) -> Option<Self> {
+        C::map(inner).map(Self::from_inner_unchecked)
+    }
+
+    fn map<F>(self, f: F) -> Self
+    where
+        F: FnOnce(T) -> T,
+    {
+        Self::from(f(self.into_inner()))
+    }
+
+    fn zip_map<F>(self, other: Self, f: F) -> Self
+    where
+        F: FnOnce(T, T) -> T,
+    {
+        Self::from(f(self.into_inner(), other.into_inner()))
     }
 }
 
