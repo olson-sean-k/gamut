@@ -197,11 +197,11 @@ where
     T: FromPrimitive,
 {
     fn from_i64(inner: i64) -> Option<Self> {
-        T::from_i64(inner).map(|inner| Self::from(inner))
+        T::from_i64(inner).and_then(|inner| Self::try_from_inner(inner))
     }
 
     fn from_u64(inner: u64) -> Option<Self> {
-        T::from_u64(inner).map(|inner| Self::from(inner))
+        T::from_u64(inner).and_then(|inner| Self::try_from_inner(inner))
     }
 }
 
